@@ -1,0 +1,33 @@
+{
+  "updates": [
+    {
+      "date": "2026-03-16",
+      "en": "Today on site — the 3rd floor columns are being cast in Block A. Concrete pouring started at 7 AM and is going smoothly. We're ahead of schedule by 2 days.",
+      "hi": "आज site पे — Block A में 3rd floor की columns का concrete pouring चल रहा है। काम शाम तक complete हो जाएगा। हम schedule से 2 दिन आगे हैं।"
+    },
+    {
+      "date": "2026-03-15",
+      "en": "Yesterday the 2nd floor slab was successfully poured across all blocks. Quality check passed. Next up is column reinforcement for the 3rd floor.",
+      "hi": "कल 2nd floor की slab डाली गई — सब blocks में। Quality check भी clear हो गया। अब 3rd floor की columns की तैयारी हो रही है।"
+    },
+    {
+      "date": "2026-03-14",
+      "en": "Boundary wall work on the east side is complete. Internal road grading is 60% done. Drainage layout mapping started this week.",
+      "hi": "East side की boundary wall complete हो गई। Internal road का काम 60% हो गया है। इस हफ़्ते drainage layout का काम भी शुरू हुआ।"
+    },
+    {
+      "date": "2026-03-13",
+      "en": "Structural steel delivery arrived today — all materials are now on site. Foundation work for Block B is 100% complete.",
+      "hi": "आज structural steel की delivery आ गई — सारा material अब site पे आ गया है। Block B की foundation 100% complete हो गई है।"
+    },
+    {
+      "date": "2026-03-12",
+      "en": "Plinth beam work completed in Block A. Bricklaying for the ground floor external walls has started. Progress is on track.",
+      "hi": "Block A में plinth beam का काम complete हुआ। Ground floor की बाहरी walls की bricklaying शुरू हो गई। सब schedule पे चल रहा है।"
+    }
+  ],
+  "fallback": {
+    "en": "Construction at Riverwood Estate, Sector 7 is going great — all civil work is on schedule and progressing well.",
+    "hi": "Riverwood Estate, Sector 7 में construction काफ़ी अच्छा चल रहा है — सब civil work schedule पे है।"
+  }
+}

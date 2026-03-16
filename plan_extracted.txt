@@ -1,0 +1,270 @@
+Riverwood AI Voice Agent – Complete Implementation Plan
+1. Project Objective
+Build a production‑style AI Voice Agent prototype for Riverwood Projects that can:
+• Greet customers naturally
+• Provide construction updates
+• Ask about site visits
+• Accept voice or text input
+• Maintain conversation context
+• Respond with natural speech
+• Demonstrate scalable architecture for 1000 automated calls
+The system should simulate a real estate AI customer relations caller.
+2. Branding & UI Design (Based on Riverwood Logo)
+Frontend colors must follow Riverwood branding derived from the company logo.
+Primary Green: #0F3D34
+Dark Green: #0B2F28
+Accent Green: #1F6F5D
+Light Background: #F4F7F6
+White: #FFFFFF
+Text: #1A1A1A
+Design Style:
+• Minimal corporate real‑estate style
+• Large spacing
+• Professional typography
+• Clean UI components
+3. Technology Stack
+Frontend:
+• Next.js
+• React
+• TailwindCSS
+• Web Audio API
+Backend:
+• Python
+• FastAPI
+Voice Processing (Prototype):
+• SpeechRecognition
+• pyttsx3
+LLM (Prototype):
+• Groq Cloud
+• Model: GPT‑OSS‑120B
+Production Upgrade:
+• Whisper (Speech‑to‑Text)
+• OpenAI / Claude / Gemini models
+• ElevenLabs (Text‑to‑Speech)
+• Twilio (Phone calls)
+4. High‑Level System Architecture
+Customer (Browser / Phone)
+        │
+        ▼
+Next.js Frontend
+        │
+        ▼
+Voice Capture (Web Audio API)
+        │
+        ▼
+FastAPI Backend
+        │
+        ▼
+Conversation Orchestrator
+        │
+ ┌──────┴────────────┐
+ ▼                   ▼
+Memory Manager   Knowledge Context
+        │
+        ▼
+LLM Provider Layer
+        │
+        ▼
+Groq Cloud (GPT‑OSS‑120B)
+        │
+        ▼
+Text‑to‑Speech Engine
+        │
+        ▼
+Voice Response
+5. Repository Structure
+riverwood-ai-voice-agent
+│
+├── backend
+│   ├── main.py
+│   ├── config.py
+│   ├── modules
+│   │   ├── speech_to_text.py
+│   │   ├── text_to_speech.py
+│   │   ├── conversation_engine.py
+│   │   ├── memory_manager.py
+│   │   └── knowledge_context.py
+│   │
+│   └── providers
+│       ├── groq_provider.py
+│       ├── openai_provider.py
+│       └── claude_provider.py
+│
+├── frontend
+│   ├── app
+│   │   ├── page.tsx
+│   │   └── layout.tsx
+│   │
+│   ├── components
+│   │   ├── VoiceAgent.tsx
+│   │   ├── ChatWindow.tsx
+│   │   ├── MicrophoneButton.tsx
+│   │   └── Header.tsx
+│   │
+│   ├── styles
+│   │   └── globals.css
+│   │
+│   └── package.json
+│
+├── architecture
+│   └── diagrams
+│
+└── README.md
+6. Backend Modules
+Speech‑to‑Text Module
+• Capture audio
+• Convert speech to transcript
+Conversation Engine
+• Build prompts
+• Combine user message, memory, and project context
+• Send request to LLM
+Memory Manager
+• Store conversation history
+• Track session state
+Knowledge Context
+Example project data:
+Riverwood Estate
+Sector 7 Kharkhauda
+25 acre township
+Near IMT Kharkhauda Industrial Hub
+Text‑to‑Speech Module
+• Convert text responses into audio playback
+7. LLM Provider Layer
+The system must include an abstraction layer for LLM providers.
+Purpose:
+• Easily switch between Groq, OpenAI, Claude, Gemini
+Example structure:
+class LLMProvider:
+    def generate_response(self, prompt):
+        pass
+Providers:
+GroqProvider
+OpenAIProvider
+ClaudeProvider
+8. Groq Integration
+Groq will be used initially for the prototype.
+Model:
+GPT‑OSS‑120B
+Example usage:
+from groq import Groq
+client = Groq(api_key="GROQ_API_KEY")
+response = client.chat.completions.create(
+    model="gpt-oss-120b",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_input}
+    ]
+)
+reply = response.choices[0].message.content
+9. Conversation Flow
+Stage 1: Greeting
+Hello, this is Aarav from Riverwood Estate.
+Stage 2: Update
+Construction for our Sector 7 township is progressing well.
+Stage 3: Engagement
+Have you had a chance to visit the site recently?
+Stage 4: Response Handling
+Would you like to schedule a visit?
+Stage 5: Closing
+Thank you for your time and we hope to see you soon.
+10. Real‑Time Streaming Voice Architecture
+User speaking
+     │
+     ▼
+Audio Stream
+     │
+     ▼
+Streaming Speech‑to‑Text
+     │
+     ▼
+Conversation Engine
+     │
+     ▼
+LLM Response
+     │
+     ▼
+Streaming Text‑to‑Speech
+     │
+     ▼
+Voice Playback
+Target latency: < 1.5 seconds
+11. Twilio Production Architecture
+Customer Phone
+      │
+      ▼
+Twilio Voice Gateway
+      │
+      ▼
+Audio Streaming
+      │
+      ▼
+Speech‑to‑Text
+      │
+      ▼
+LLM Conversation Engine
+      │
+      ▼
+Text‑to‑Speech
+      │
+      ▼
+Voice Response
+12. Scaling Architecture (1000 Calls)
+Scheduler
+   │
+   ▼
+Customer Call Jobs
+   │
+   ▼
+Task Queue (Kafka / RabbitMQ)
+   │
+   ▼
+Worker Instances
+   │
+   ▼
+Twilio Voice Gateway
+   │
+   ▼
+AI Voice Agent Engine
+Example scaling:
+1 worker = 10 calls
+100 workers = 1000 calls
+Infrastructure:
+Docker
+Kubernetes
+Redis
+PostgreSQL
+13. Monitoring
+Track:
+• Response latency
+• Call duration
+• Error rate
+• Conversation logs
+Tools:
+Prometheus
+Grafana
+Sentry
+14. Cost Estimation
+Average call duration: 2 minutes
+Twilio cost: $0.013 per minute
+1000 calls x 2 minutes = 2000 minutes
+Total ≈ $26
+AI costs:
+LLM ≈ $10
+TTS ≈ $5
+STT ≈ $5
+Estimated total ≈ $35–40 per 1000 calls
+15. Loom Demo Plan
+1. Introduction
+Explain the AI voice agent system.
+2. Demo
+Show voice interaction.
+3. Architecture
+Explain backend + frontend + LLM flow.
+4. Scaling
+Explain infrastructure for 1000 automated calls.
+16. Final Deliverables
+• GitHub repository
+• Working voice agent prototype
+• Architecture diagrams
+• Loom demo recording
+• Technical architecture explanation
