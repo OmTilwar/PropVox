@@ -1,0 +1,18 @@
+# ─── Backend ──────────────────────────────────────────────────────────────────
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/.env
+backend/convo.log
+backend/debug*.txt
+
+frontend/node_modules/
+frontend/.next/
+
+# ─── General ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.pem
+*.log
