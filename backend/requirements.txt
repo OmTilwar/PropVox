@@ -2,5 +2,5 @@ fastapi
 uvicorn
 websockets
 groq
-edge-tts
+deepgram-sdk
 python-dotenv
