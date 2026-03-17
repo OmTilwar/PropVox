@@ -61,8 +61,10 @@ export default function VoiceAgent() {
     if (!selectedLanguage) return;
 
     // Initialize WebSocket with language query param
-    const backendUrl = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000";
-    const ws = new WebSocket(`${backendUrl}/ws/voice?language=${selectedLanguage}`);
+    // const backendUrl = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000";
+    // const ws = new WebSocket(`${backendUrl}/ws/voice?language=${selectedLanguage}`);
+    const backendUrl = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000/ws/voice";
+    const ws = new WebSocket(`${backendUrl}?language=${selectedLanguage}`);
     
     ws.onopen = () => {
       setIsConnected(true);
