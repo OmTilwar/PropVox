@@ -1,4 +1,4 @@
-# 🏡 PropVox AI Voice Agent — System Evaluation Report
+# 🏡 PropVox AI Voice Agent 
 **Project:** PropVox AI Voice Assistant (Myra)  
 **Status:** Active Development — Production-Ready Core  
 **Last Updated:** WebSocket TTS migration completed; Deepgram endpointing tuned for ultra-low latency; English + Hindi fully operational
