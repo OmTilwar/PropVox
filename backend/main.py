@@ -31,6 +31,7 @@ app.add_middleware(
 
 @app.websocket("/ws/voice")
 async def websocket_endpoint(websocket: WebSocket, language: str = "en"):
+    print("🔥 WebSocket endpoint hit")
     await websocket.accept()
     session_id = str(id(websocket))
     
