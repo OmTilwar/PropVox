@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Secrets
+.env
+**/.env
+
+# Runtime data (contains caller phone numbers / transcripts)
+backend/conversation_logs/
+backend/customers.json
+backend/customers.backup.json
+*.log
+
+# Personal / non-project notes
+content_propvox
+Om_Tilwar_*.md
+
+# Editor / OS
+.idea/
+.vscode/
+.cursor/
+.DS_Store
+Thumbs.db
