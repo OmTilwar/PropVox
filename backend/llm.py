@@ -54,7 +54,14 @@ def resolve_llm_provider():
 def _extra_body(provider, model):
     """Provider-specific request options tuned for low first-token latency."""
     if provider == "openrouter":
-        body = {"provider": {"sort": "latency"}}
+        # Prefer Groq's LPU hardware (~300-450 ms first token for Llama 3.3 70B); if it is down,
+        # OpenRouter falls through to the listed providers and then to any other host.
+        order = [
+            p.strip()
+            for p in (os.environ.get("OPENROUTER_PROVIDER_ORDER") or "Groq,Together,CoreWeave,Cloudflare").split(",")
+            if p.strip()
+        ]
+        body = {"provider": {"order": order, "allow_fallbacks": True} if order else {"sort": "latency"}}
         fallbacks = [
             m.strip()
             for m in (os.environ.get("MYRA_LLM_FALLBACK_MODELS") or "openai/gpt-4o-mini").split(",")

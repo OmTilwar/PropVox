@@ -9,7 +9,7 @@ Phone (customer)
    ⇅  Twilio Media Streams — 8 kHz μ-law over WebSocket
 backend/main.py  (Python asyncio WebSocket server)
    ├── Deepgram Nova-3 (multi)  → streaming STT, English + Hindi code-switching
-   ├── LLM via OpenRouter (Llama 3.3 70B, latency-sorted, GPT-4o-mini fallback) or Groq
+   ├── LLM via OpenRouter (Llama 3.3 70B on Groq hardware, provider + model fallbacks) or Groq
    │                            → streaming reply, starts with a [filler] token
    ├── Pre-decoded filler audio → played the instant the [filler] token arrives
    ├── Sarvam bulbul:v3 TTS     → sentence-by-sentence synthesis, streamed back to Twilio
@@ -26,7 +26,7 @@ backend/main.py  (Python asyncio WebSocket server)
 | **Early first clause** — the first chunk of a reply may be cut at a comma once it is long enough | First spoken words arrive sooner on long opening sentences |
 | **Hindi-aware sentence splitting** — splits on `।` as well as `. ? !`, never inside numbers like `2.5` | Hinglish replies stream instead of waiting for the full reply |
 | **Shared LLM client** — one HTTP connection pool per process | Reuses warm TLS connections across turns and calls |
-| **Latency-sorted LLM routing** — OpenRouter picks the fastest provider, with an automatic fallback model | ~550–900 ms first token, no dead-model outages |
+| **Groq-first LLM routing** — OpenRouter pinned to Groq's LPUs, falling back to other hosts and a backup model | ~370–430 ms to first token / filler (measured from India) |
 | **Background in-call memory folding** — older turns are summarised off the critical path | Turn tasks finish as soon as the reply is out |
 | **Parallel filler decoding at startup** | Server boot ~5× faster |
 
@@ -68,7 +68,7 @@ The facts Myra pitches come from env vars, so the same agent works for any proje
 PROPVOX_COMPANY, PROPVOX_PROJECT, PROPVOX_LOCATION, PROPVOX_SIZE, PROPVOX_PRICE
 ```
 
-Other knobs: `LLM_PROVIDER` (`openrouter` / `groq`), `MYRA_LLM_FALLBACK_MODELS`, `MYRA_LANGUAGE` (`auto` / `english` / `hinglish`), `MYRA_LLM_MODEL`, `DEEPGRAM_MODEL`, `DEEPGRAM_LANGUAGE`, `SARVAM_SPEAKER`, `TTS_SAMPLE_RATE`, `REDIS_URL`.
+Other knobs: `LLM_PROVIDER` (`openrouter` / `groq`), `OPENROUTER_PROVIDER_ORDER`, `MYRA_LLM_FALLBACK_MODELS`, `MYRA_LANGUAGE` (`auto` / `english` / `hinglish`), `MYRA_LLM_MODEL`, `DEEPGRAM_MODEL`, `DEEPGRAM_LANGUAGE`, `SARVAM_SPEAKER`, `TTS_SAMPLE_RATE`, `REDIS_URL`.
 
 ## Deploy (Render / Docker)
 
