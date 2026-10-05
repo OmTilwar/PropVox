@@ -9,7 +9,8 @@ Phone (customer)
    ⇅  Twilio Media Streams — 8 kHz μ-law over WebSocket
 backend/main.py  (Python asyncio WebSocket server)
    ├── Deepgram Nova-3 (multi)  → streaming STT, English + Hindi code-switching
-   ├── Groq (Llama 4 Scout)     → streaming reply, starts with a [filler] token
+   ├── LLM via OpenRouter (Llama 3.3 70B, latency-sorted, GPT-4o-mini fallback) or Groq
+   │                            → streaming reply, starts with a [filler] token
    ├── Pre-decoded filler audio → played the instant the [filler] token arrives
    ├── Sarvam bulbul:v3 TTS     → sentence-by-sentence synthesis, streamed back to Twilio
    └── CRM memory (Redis or JSON) → merged post-call summary, injected into the next call
@@ -24,7 +25,8 @@ backend/main.py  (Python asyncio WebSocket server)
 | **Parallel sentence synthesis** — every complete sentence starts TTS immediately; playback stays in order | No gap between sentences waiting for the next synthesis to start |
 | **Early first clause** — the first chunk of a reply may be cut at a comma once it is long enough | First spoken words arrive sooner on long opening sentences |
 | **Hindi-aware sentence splitting** — splits on `।` as well as `. ? !`, never inside numbers like `2.5` | Hinglish replies stream instead of waiting for the full reply |
-| **Shared Groq client** — one HTTP connection pool per process | Reuses warm TLS connections across turns and calls |
+| **Shared LLM client** — one HTTP connection pool per process | Reuses warm TLS connections across turns and calls |
+| **Latency-sorted LLM routing** — OpenRouter picks the fastest provider, with an automatic fallback model | ~550–900 ms first token, no dead-model outages |
 | **Background in-call memory folding** — older turns are summarised off the critical path | Turn tasks finish as soon as the reply is out |
 | **Parallel filler decoding at startup** | Server boot ~5× faster |
 
@@ -39,7 +41,7 @@ backend/main.py  (Python asyncio WebSocket server)
 
 ## Quick start
 
-Prerequisites: Python 3.11+, `ffmpeg` on PATH, accounts for Deepgram, Groq, Sarvam and Twilio.
+Prerequisites: Python 3.11+, `ffmpeg` on PATH, accounts for Deepgram, Sarvam, Twilio and OpenRouter (or Groq).
 
 ```bash
 cd backend
@@ -66,7 +68,7 @@ The facts Myra pitches come from env vars, so the same agent works for any proje
 PROPVOX_COMPANY, PROPVOX_PROJECT, PROPVOX_LOCATION, PROPVOX_SIZE, PROPVOX_PRICE
 ```
 
-Other knobs: `MYRA_LANGUAGE` (`auto` / `english` / `hinglish`), `MYRA_LLM_MODEL`, `DEEPGRAM_MODEL`, `DEEPGRAM_LANGUAGE`, `SARVAM_SPEAKER`, `TTS_SAMPLE_RATE`, `REDIS_URL`.
+Other knobs: `LLM_PROVIDER` (`openrouter` / `groq`), `MYRA_LLM_FALLBACK_MODELS`, `MYRA_LANGUAGE` (`auto` / `english` / `hinglish`), `MYRA_LLM_MODEL`, `DEEPGRAM_MODEL`, `DEEPGRAM_LANGUAGE`, `SARVAM_SPEAKER`, `TTS_SAMPLE_RATE`, `REDIS_URL`.
 
 ## Deploy (Render / Docker)
 
@@ -82,7 +84,7 @@ docker run -p 5050:5050 --env-file backend/.env propvox-voice-agent
 ```
 backend/
   main.py                 Twilio WebSocket handler: STT → LLM → filler → TTS pipeline
-  llm.py                  Groq streaming layer, prompt, in-call memory, CRM summary
+  llm.py                  Streaming LLM layer (OpenRouter / Groq), prompt, in-call memory, CRM summary
   stt.py                  Deepgram streaming client
   tts.py                  Sarvam streaming client with pre-warmed sockets
   crm.py                  Caller memory (Redis, falls back to customers.json)

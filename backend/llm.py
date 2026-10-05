@@ -20,15 +20,64 @@ PROJECT = {
     ),
 }
 
+# OpenAI-compatible LLM providers. OpenRouter is preferred when its key is present.
+LLM_PROVIDERS = {
+    "openrouter": {
+        "base_url": "https://openrouter.ai/api/v1",
+        "key_envs": ("OPENROUTER_API_KEY", "OPEN_ROUTER_API"),
+        "default_model": "meta-llama/llama-3.3-70b-instruct",
+    },
+    "groq": {
+        "base_url": "https://api.groq.com/openai/v1",
+        "key_envs": ("GROQ_API_KEY",),
+        "default_model": "openai/gpt-oss-120b",
+    },
+}
+
+
+def _provider_key(name):
+    for env in LLM_PROVIDERS[name]["key_envs"]:
+        value = (os.environ.get(env) or "").strip()
+        if value:
+            return value
+    return None
+
+
+def resolve_llm_provider():
+    """LLM_PROVIDER env wins; otherwise OpenRouter if keyed, else Groq."""
+    name = (os.environ.get("LLM_PROVIDER") or "").strip().lower()
+    if name not in LLM_PROVIDERS:
+        name = "openrouter" if _provider_key("openrouter") else "groq"
+    return name
+
+
+def _extra_body(provider, model):
+    """Provider-specific request options tuned for low first-token latency."""
+    if provider == "openrouter":
+        body = {"provider": {"sort": "latency"}}
+        fallbacks = [
+            m.strip()
+            for m in (os.environ.get("MYRA_LLM_FALLBACK_MODELS") or "openai/gpt-4o-mini").split(",")
+            if m.strip() and m.strip() != model
+        ]
+        if fallbacks:
+            body["models"] = [model] + fallbacks  # tried in order if the primary errors / is rate-limited
+        return body
+    if "gpt-oss" in model:
+        return {"reasoning_effort": "low"}
+    return None
+
+
 # One shared client per process: reuses the HTTP/TLS connection pool across turns and calls.
-_SHARED_CLIENT = None
+_SHARED_CLIENTS = {}
 
 
-def _get_client(api_key: str) -> AsyncOpenAI:
-    global _SHARED_CLIENT
-    if _SHARED_CLIENT is None:
-        _SHARED_CLIENT = AsyncOpenAI(base_url="https://api.groq.com/openai/v1", api_key=api_key)
-    return _SHARED_CLIENT
+def _get_client(provider: str, api_key: str) -> AsyncOpenAI:
+    if provider not in _SHARED_CLIENTS:
+        _SHARED_CLIENTS[provider] = AsyncOpenAI(
+            base_url=LLM_PROVIDERS[provider]["base_url"], api_key=api_key
+        )
+    return _SHARED_CLIENTS[provider]
 
 
 # Last N user+assistant pairs kept verbatim in the API; older turns fold into rolling_incall_summary
@@ -78,8 +127,9 @@ def _last_user_content_for_turn(dialogue: list) -> str:
 
 class GroqLLMLayer:
     """
-    Modular Layer for Groq (Llama-3.1) Large Language Model.
+    LLM layer over an OpenAI-compatible API (OpenRouter by default, Groq optional).
     Exposes an async streaming generator for seamless TTS chunking.
+    (Class name kept for backward compatibility.)
     """
     def __init__(
         self,
@@ -88,16 +138,21 @@ class GroqLLMLayer:
         filler_keys_english=None,
         filler_keys_hinglish=None,
     ):
-        self.api_key = os.environ.get("GROQ_API_KEY")
+        self.provider = resolve_llm_provider()
+        self.api_key = _provider_key(self.provider)
         if not self.api_key:
-            raise ValueError("GROQ_API_KEY is missing from environment variables.")
-        
+            raise ValueError(
+                f"No API key for LLM provider '{self.provider}' "
+                f"(set one of {', '.join(LLM_PROVIDERS[self.provider]['key_envs'])})."
+            )
+
         # Async client used for real-time streaming
-        self.client = _get_client(self.api_key)
+        self.client = _get_client(self.provider, self.api_key)
         self.model = (
             os.environ.get("MYRA_LLM_MODEL")
-            or "meta-llama/llama-4-scout-17b-16e-instruct"
+            or LLM_PROVIDERS[self.provider]["default_model"]
         ).strip()
+        self._extra_body = _extra_body(self.provider, self.model)
         self.rolling_incall_summary = ""
         self._dialogue_folded_until = 0
         self._fold_task = None
@@ -135,7 +190,7 @@ class GroqLLMLayer:
         self._static_system_base = base_prompt
         self.conversation_history = [{"role": "system", "content": self._static_system_base}]
         print(
-            f"[LLM] model={self.model} | MYRA_LANGUAGE={self._language_mode} "
+            f"[LLM] provider={self.provider} model={self.model} | MYRA_LANGUAGE={self._language_mode} "
             f"| fillers: EN={len(self._filler_keys_english)} HI={len(self._filler_keys_hinglish)} "
             "(auto=English first, switch to Hinglish when user speaks Hindi; hinglish|english=lock)"
         )
@@ -370,6 +425,7 @@ ONLY close when they clearly say goodbye (bye, thanks, alvida, shukriya). Then w
         try:
             stream = await self.client.chat.completions.create(
                 model=self.model,
+                extra_body=self._extra_body,
                 messages=messages,
                 stream=True,
                 max_tokens=280,
@@ -392,7 +448,7 @@ ONLY close when they clearly say goodbye (bye, thanks, alvida, shukriya). Then w
                 self._fold_task = asyncio.create_task(self._maybe_roll_incall_summary())
 
         except Exception as e:
-            print(f"[Groq LLM Error]: {e}")
+            print(f"[LLM Error] ({self.provider}): {e}")
 
     async def _maybe_roll_incall_summary(self):
         dialogue = self._dialogue_for_crm()
@@ -419,6 +475,7 @@ ONLY close when they clearly say goodbye (bye, thanks, alvida, shukriya). Then w
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
+                extra_body=self._extra_body,
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
@@ -510,6 +567,7 @@ ONLY close when they clearly say goodbye (bye, thanks, alvida, shukriya). Then w
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
+                extra_body=self._extra_body,
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": user_payload},

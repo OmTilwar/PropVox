@@ -39,7 +39,7 @@ class SarvamTTSLayer:
                 open_timeout=5,
             )
         except Exception as e:
-            print(f"[Sarvam TTS Connect Error]: {e}")
+            print(f"[Sarvam TTS Connect Error]: {type(e).__name__}: {e!r}")
             return None
 
     def prewarm(self):
