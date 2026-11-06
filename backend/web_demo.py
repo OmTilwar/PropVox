@@ -15,6 +15,10 @@ Guards, because a public page spends real API credit (Deepgram, LLM, Sarvam):
   WEB_DEMO_MAX_SECONDS       per-call limit (default 180)
   WEB_DEMO_MAX_CONCURRENT    calls at once (default 2)
   WEB_DEMO_MAX_PER_DAY       calls per IST day (default 40)
+  WEB_DEMO_ALLOWED_ORIGINS   page origins allowed to start calls, e.g. https://propvox.vercel.app (empty = any)
+
+The page can also be hosted elsewhere (Vercel): web/config.js points it at this server, and /check sends CORS
+headers for the allowed origins.
 """
 from __future__ import annotations
 
@@ -89,8 +93,31 @@ def _is_upgrade(headers) -> bool:
     return "websocket" in (headers.get("Upgrade") or "").lower()
 
 
-def _text(status: HTTPStatus, body: str):
-    return status, [("Content-Type", "text/plain; charset=utf-8"), ("Cache-Control", "no-store")], body.encode()
+def allowed_origins() -> set[str]:
+    """WEB_DEMO_ALLOWED_ORIGINS: comma-separated page origins (e.g. https://propvox.vercel.app) that may start
+    browser calls. Empty = any origin (local development)."""
+    raw = os.environ.get("WEB_DEMO_ALLOWED_ORIGINS", "")
+    return {o.strip().rstrip("/") for o in raw.split(",") if o.strip()}
+
+
+def origin_ok(request_headers) -> bool:
+    allowed = allowed_origins()
+    if not allowed:
+        return True
+    origin = (request_headers.get("Origin") or "").rstrip("/")
+    return origin in allowed
+
+
+def _cors(request_headers) -> list[tuple[str, str]]:
+    origin = (request_headers.get("Origin") or "").rstrip("/")
+    if origin and (not allowed_origins() or origin in allowed_origins()):
+        return [("Access-Control-Allow-Origin", origin), ("Vary", "Origin")]
+    return []
+
+
+def _text(status: HTTPStatus, body: str, extra: list[tuple[str, str]] | None = None):
+    headers = [("Content-Type", "text/plain; charset=utf-8"), ("Cache-Control", "no-store"), *(extra or [])]
+    return status, headers, body.encode()
 
 
 async def process_request(path: str, request_headers):
@@ -100,13 +127,21 @@ async def process_request(path: str, request_headers):
         if url.path == "/healthz":
             return _text(HTTPStatus.OK, "ok\n")
         if url.path == "/check":       # lets the page explain a refusal before it opens the call
+            cors = _cors(request_headers)
+            if not origin_ok(request_headers):
+                return _text(HTTPStatus.FORBIDDEN, "This page isn't allowed to start calls.\n", cors)
             refused = GATE.check((parse_qs(url.query).get("code") or [None])[0])
-            return _text(*refused) if refused else _text(HTTPStatus.OK, "ok\n")
+            return _text(*refused, cors) if refused else _text(HTTPStatus.OK, "ok\n", cors)
         if url.path in ("/", "/index.html") and GATE.enabled and PAGE.exists():
             return HTTPStatus.OK, [("Content-Type", "text/html; charset=utf-8"), ("Cache-Control", "no-store")], \
                 PAGE.read_bytes()
+        if url.path == "/config.js" and GATE.enabled:   # served here = same-origin backend (local runs)
+            return HTTPStatus.OK, [("Content-Type", "application/javascript; charset=utf-8"), ("Cache-Control", "no-store")], \
+                b'window.PROPVOX_BACKEND = "";\n'
         return _text(HTTPStatus.NOT_FOUND, "Not found.\n")
     if url.path == "/browser":
+        if not origin_ok(request_headers):       # only the demo page itself may open calls
+            return _text(HTTPStatus.FORBIDDEN, "This page isn't allowed to start calls.\n")
         refused = GATE.check((parse_qs(url.query).get("code") or [None])[0])
         if refused:
             return _text(*refused)

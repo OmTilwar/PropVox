@@ -3,114 +3,176 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Talk to Myra · PropVox AI voice agent</title>
-<meta name="description" content="Live demo of PropVox: a real-time bilingual (English + Hinglish) AI voice agent. Speak to Myra from your browser.">
+<title>Call Myra · PropVox AI voice agent</title>
+<meta name="description" content="Live demo of PropVox: a real-time bilingual (English + Hinglish) AI voice agent. Call Myra from your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wdth,wght@75..125,300..800&family=Anek+Latin:wdth,wght@75..125,300..800&display=swap" rel="stylesheet">
+<script src="config.js"></script>
 <style>
   :root {
-    --paper: #eef2ef;      /* pale sage */
-    --ink: #13201c;
-    --muted: #51625c;
-    --line: #c9d4cf;
-    --call: #1f6f5c;       /* deep call-green */
-    --call-ink: #f4faf7;
-    --hang: #a3362c;
-    --marigold: #e3a43a;   /* Myra speaking */
-    --focus: #0b57d0;
+    --morning: #edf1f7;
+    --ink: #1c2147;
+    --haze: #5b6283;
+    --rule: #cdd4e3;
+    --marigold: #e8a33d;
+    --marigold-ink: #2a1a00;
+    --teal: #2f8c86;
+    --brick: #c24b3a;
+    --focus: #1f5fd6;
+    --font: "Anek Latin", "Anek Devanagari", system-ui, "Segoe UI", sans-serif;
+    --deva: "Anek Devanagari", "Anek Latin", "Nirmala UI", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; }
   body {
-    min-height: 100vh; background: var(--paper); color: var(--ink);
-    font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
-    display: grid; place-items: center; padding: 32px 20px;
+    background: var(--morning); color: var(--ink);
+    font-family: var(--font); font-size: 18px; line-height: 1.5;
+    font-variation-settings: "wdth" 100;
   }
-  main { width: 100%; max-width: 620px; }
-  h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.02em; font-weight: 750; }
-  .lede { color: var(--muted); margin: 0 0 28px; max-width: 34em; }
-  .phone {
-    border: 1.5px solid var(--line); border-radius: 22px; background: #f8fbf9;
-    padding: 26px 24px 22px; display: grid; gap: 18px;
+  a { color: inherit; }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 28px 24px 56px; }
+  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 7vh; }
+  .brand { font-weight: 700; font-size: 1.15rem; letter-spacing: .01em; font-variation-settings: "wdth" 112; }
+  .top a { color: var(--haze); font-size: .95rem; }
+
+  .grid { display: grid; gap: 56px; }
+  @media (min-width: 960px) { .grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; } }
+
+  /* The greeting is the voice meter: its width axis follows whoever is speaking. */
+  .hello {
+    margin: 0; line-height: .92; font-weight: 720;
+    font-size: clamp(4.4rem, 14vw, 10.5rem);
+    font-variation-settings: "wdth" var(--stretch, 100);
+    color: var(--ink); transition: color .25s ease;
+    letter-spacing: -0.02em;
   }
-  .row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  .who { font-weight: 650; font-size: 1.15rem; }
-  .who small { display: block; font-weight: 400; color: var(--muted); font-size: .9rem; }
-  .status { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); font-size: .95rem; text-align: right; }
-  .meters { display: grid; grid-template-columns: 4.2em 1fr; gap: 8px 12px; align-items: center; font-size: .85rem; color: var(--muted); }
-  .bar { height: 8px; border-radius: 99px; background: #e2e9e5; overflow: hidden; }
-  .bar i { display: block; height: 100%; width: 0%; border-radius: 99px; transition: width 60ms linear; }
-  #youBar i { background: var(--call); }
-  #myraBar i { background: var(--marigold); }
-  button.call {
-    appearance: none; border: 0; border-radius: 99px; padding: 15px 28px; font: inherit; font-weight: 650;
-    background: var(--call); color: var(--call-ink); cursor: pointer; min-width: 11em;
+  .hello.you { color: var(--teal); }
+  .hello.myra { color: var(--marigold); }
+  .hindi {
+    font-family: var(--deva); font-weight: 500; color: var(--haze);
+    font-size: clamp(1.35rem, 2.6vw, 1.9rem); margin: 14px 0 26px;
+    font-variation-settings: "wdth" 100;
   }
-  button.call.hang { background: var(--hang); }
-  button.call:disabled { opacity: .55; cursor: progress; }
-  button:focus-visible, input:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
-  label.code { display: grid; gap: 6px; font-size: .9rem; color: var(--muted); }
-  input[type=text] { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff; width: 12em; }
-  label.check { font-size: .9rem; color: var(--muted); display: flex; gap: 8px; align-items: center; }
-  .msg { min-height: 1.5em; font-size: .95rem; }
-  .msg.err { color: var(--hang); }
-  .try { margin: 30px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
-  .try li { padding-left: 1.1em; position: relative; }
-  .try li::before { content: ""; position: absolute; left: 0; top: .7em; width: .45em; height: .45em; border-radius: 50%; background: var(--marigold); }
-  .try q { font-style: italic; }
-  footer { margin-top: 30px; font-size: .85rem; color: var(--muted); }
-  footer a { color: inherit; }
-  @media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+  .lede { max-width: 31em; margin: 0 0 34px; color: var(--ink); }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; }
+  .call {
+    appearance: none; border: 0; cursor: pointer;
+    font: inherit; font-weight: 700; font-size: 1.1rem; font-variation-settings: "wdth" 108;
+    padding: 16px 34px; border-radius: 999px;
+    background: var(--marigold); color: var(--marigold-ink);
+  }
+  .call.hang { background: var(--brick); color: #fff; }
+  .call:disabled { opacity: .6; cursor: progress; }
+  .state { font-variant-numeric: tabular-nums; color: var(--haze); }
+  .state b { color: var(--ink); font-weight: 600; }
+  .code { display: flex; align-items: center; gap: 10px; color: var(--haze); font-size: .95rem; }
+  .code input { font: inherit; font-size: 1rem; padding: 9px 12px; border: 1.5px solid var(--rule); border-radius: 10px; background: #fff; color: var(--ink); width: 9.5em; }
+  .options { margin-top: 18px; color: var(--haze); font-size: .95rem; display: flex; gap: 10px; align-items: center; }
+  .options input { width: 18px; height: 18px; accent-color: var(--teal); }
+  .msg { min-height: 1.6em; margin: 16px 0 0; font-size: .98rem; }
+  .msg.err { color: var(--brick); }
+
+  .turns { margin-top: 40px; }
+  .turns h2, aside h2 { font-size: 1.05rem; font-weight: 650; margin: 0 0 4px; font-variation-settings: "wdth" 104; }
+  .turns .note { color: var(--haze); font-size: .9rem; margin: 0 0 14px; max-width: 34em; }
+  .turns ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+  .turns li { display: grid; grid-template-columns: 5.5em 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+  .turns li span:first-child { color: var(--haze); }
+  .turns li strong { font-weight: 650; }
+  .turns li.empty { display: block; color: var(--haze); padding: 12px 0; }
+
+  aside { display: grid; gap: 40px; padding-top: 6px; }
+  .flow { margin: 10px 0 0; padding: 0; list-style: none; counter-reset: step; }
+  .flow li { counter-increment: step; display: grid; grid-template-columns: 2em 1fr; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--rule); }
+  .flow li::before { content: counter(step); color: var(--haze); font-variant-numeric: tabular-nums; }
+  .flow small { display: block; color: var(--haze); font-size: .88rem; }
+  .try { margin: 10px 0 0; padding-left: 1.1em; }
+  .try li { margin: 0 0 8px; }
+  .try q { font-family: var(--deva); }
+  .fine { color: var(--haze); font-size: .88rem; max-width: 34em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hello { font-variation-settings: "wdth" 100 !important; transition: none; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>Talk to Myra</h1>
-  <p class="lede">Myra is PropVox's AI voice agent: a real-estate caller who speaks English and switches to Hinglish when you do.
-    This page runs the same pipeline as a phone call: Deepgram speech-to-text, Llama&nbsp;3.3&nbsp;70B on Groq, Sarvam text-to-speech.</p>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">PropVox</div>
+    <a href="https://github.com/OmTilwar/PropVox">Code on GitHub</a>
+  </header>
 
-  <section class="phone" aria-label="Call">
-    <div class="row">
-      <div class="who">Myra <small>PropVox Estate</small></div>
-      <div class="status" id="status" role="status" aria-live="polite">Ready</div>
-    </div>
-    <div class="meters" aria-hidden="true">
-      <span>You</span><div class="bar" id="youBar"><i></i></div>
-      <span>Myra</span><div class="bar" id="myraBar"><i></i></div>
-    </div>
-    <div class="row">
-      <button class="call" id="callBtn" type="button">Start call</button>
-      <label class="code" id="codeWrap">Access code
-        <input type="text" id="code" autocomplete="off" spellcheck="false" inputmode="text">
-      </label>
-    </div>
-    <label class="check"><input type="checkbox" id="headphones"> I'm wearing headphones (lets you interrupt Myra more easily)</label>
-    <div class="msg" id="msg"></div>
-  </section>
+  <div class="grid">
+    <main>
+      <h1 class="hello" id="hello" aria-label="Hello">Hello.</h1>
+      <p class="hindi" lang="hi">हेलो, कौन बोल रहा है?</p>
+      <p class="lede">Call Myra, PropVox's AI real-estate caller. Speak English or Hindi and she follows you; interrupt her whenever you like.</p>
 
-  <ul class="try">
-    <li>You speak first, as on a real call. Try <q>Hello, who is this?</q> or <q>हेलो, कौन बोल रहा है?</q></li>
-    <li>Interrupt her while she's talking: she stops and listens.</li>
-    <li>Call again later from this browser: she remembers what you discussed.</li>
-  </ul>
-  <footer>Calls are capped at a few minutes. Code: <a href="https://github.com/omtilwar/PropVox">github.com/omtilwar/PropVox</a></footer>
-</main>
+      <div class="controls">
+        <button class="call" id="callBtn" type="button">Call Myra</button>
+        <label class="code" id="codeWrap">Access code <input type="text" id="code" autocomplete="off" spellcheck="false"></label>
+        <div class="state" id="state" role="status" aria-live="polite"><b>Ready</b></div>
+      </div>
+      <label class="options"><input type="checkbox" id="headphones"> I'm wearing headphones, so Myra won't hear herself</label>
+      <p class="msg" id="msg"></p>
+
+      <section class="turns" aria-labelledby="turnsTitle">
+        <h2 id="turnsTitle">Reply times</h2>
+        <p class="note">Measured in your browser: from the moment you stop talking to Myra's first sound, network included.</p>
+        <ol id="turns"><li class="empty">Your turns will appear here.</li></ol>
+      </section>
+    </main>
+
+    <aside>
+      <section aria-labelledby="flowTitle">
+        <h2 id="flowTitle">How a call flows</h2>
+        <ol class="flow">
+          <li><span>Your microphone<small>streamed as 8 kHz audio, the same format a phone call uses</small></span></li>
+          <li><span>Deepgram Nova-3<small>live speech-to-text, English and Hindi in one stream</small></span></li>
+          <li><span>Llama 3.3 70B on Groq<small>writes the reply, starting with a reaction tag</small></span></li>
+          <li><span>A recorded reaction plays at once<small>"hmm", "achha": you hear Myra before the full reply is ready</small></span></li>
+          <li><span>Sarvam AI voice<small>speaks the reply sentence by sentence</small></span></li>
+        </ol>
+      </section>
+      <section aria-labelledby="tryTitle">
+        <h2 id="tryTitle">Try this</h2>
+        <ul class="try">
+          <li>Say hello first; Myra waits for you, like on a real call.</li>
+          <li>Switch to Hindi: <q lang="hi">प्लॉट का प्राइस क्या है?</q></li>
+          <li>Talk over her while she's speaking. She stops and listens.</li>
+          <li>Call again later from this browser. She remembers what you discussed.</li>
+        </ul>
+      </section>
+      <p class="fine">Calls last up to 3 minutes. Audio isn't stored; Myra keeps a short summary of your call so she can pick up where you left off.</p>
+    </aside>
+  </div>
+</div>
 
 <script>
 (() => {
   "use strict";
   const $ = (id) => document.getElementById(id);
-  const statusEl = $("status"), msgEl = $("msg"), btn = $("callBtn"), codeIn = $("code");
-  const youBar = $("youBar").firstElementChild, myraBar = $("myraBar").firstElementChild;
+  const helloEl = $("hello"), stateEl = $("state"), msgEl = $("msg"), btn = $("callBtn"), codeIn = $("code"), turnsEl = $("turns");
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // ----- access code from the link (?code=...) ------------------------------------------------------------
+  // ----- backend address (config.js) and access code (?code=...) -------------------------------------------
+  const base = (window.PROPVOX_BACKEND || location.origin).replace(/\/+$/, "");
+  const wsBase = base.replace(/^http/, "ws");
   const params = new URLSearchParams(location.search);
   if (params.get("code")) { codeIn.value = params.get("code"); $("codeWrap").hidden = true; }
 
   // a stable caller id per browser, so Myra's cross-call memory works for this visitor
   let caller = localStorage.getItem("propvox_caller");
-  if (!caller) { caller = "web-" + crypto.getRandomValues(new Uint32Array(2)).join("").slice(0, 12); localStorage.setItem("propvox_caller", caller); }
+  if (!caller) { caller = "web-" + Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem("propvox_caller", caller); }
 
-  // ----- G.711 mu-law (what Twilio and the server use) ----------------------------------------------------
-  function encodeMulaw(s) {            // s: int16
+  // ----- G.711 mu-law: what Twilio and the server use ------------------------------------------------------
+  function encodeMulaw(s) {
     const BIAS = 0x84, CLIP = 32635;
     let sign = (s >> 8) & 0x80;
     if (sign) s = -s;
@@ -118,58 +180,76 @@
     s += BIAS;
     let exp = 7;
     for (let mask = 0x4000; (s & mask) === 0 && exp > 0; exp--, mask >>= 1) {}
-    const mant = (s >> (exp + 3)) & 0x0f;
-    return ~(sign | (exp << 4) | mant) & 0xff;
+    return ~(sign | (exp << 4) | ((s >> (exp + 3)) & 0x0f)) & 0xff;
   }
   const MULAW = new Float32Array(256);
   for (let i = 0; i < 256; i++) {
-    const u = ~i & 0xff, sign = u & 0x80, exp = (u >> 4) & 7, mant = u & 0x0f;
-    let s = (((mant << 3) + 0x84) << exp) - 0x84;
-    MULAW[i] = (sign ? -s : s) / 32768;
+    const u = ~i & 0xff, exp = (u >> 4) & 7, s = ((((u & 0x0f) << 3) + 0x84) << exp) - 0x84;
+    MULAW[i] = ((u & 0x80) ? -s : s) / 32768;
   }
   const b64ToBytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
   const bytesToB64 = (bytes) => { let s = ""; for (const b of bytes) s += String.fromCharCode(b); return btoa(s); };
 
-  // ----- state ------------------------------------------------------------------------------------------
-  let ctx = null, ws = null, stream = null, tap = null, sources = new Set(), playEnd = 0, timer = null;
-  let pending = [], resamplePos = 0, startedAt = 0, limitSec = 180, ending = false;
-  const SR_OUT = 8000, FRAME = 160;   // 20 ms frames, like Twilio
-  const streamSid = "web-" + Date.now().toString(36);
+  // ----- state -------------------------------------------------------------------------------------------
+  const SR_OUT = 8000, FRAME = 160, LIMIT = 180;     // 20 ms frames like Twilio; server closes at 180 s
+  const SPEECH = 0.03, END_SILENCE_MS = 250;          // local speech detection for the reply-time log
+  let ctx = null, ws = null, stream = null, tap = null, sources = new Set(), playEnd = 0, timer = null, raf = 0;
+  let pending = [], pos = 0, startedAt = 0, ending = false, streamSid = "";
+  let youLevel = 0, myraLevel = 0, stretch = 100;
+  let lastLoud = 0, loudMs = 0, awaiting = 0, turnNo = 0;
 
-  const setStatus = (t) => { statusEl.textContent = t; };
   const setMsg = (t, err = false) => { msgEl.textContent = t; msgEl.className = "msg" + (err ? " err" : ""); };
-  const myraSpeaking = () => ctx && ctx.currentTime < playEnd - 0.03;
+  const myraSpeaking = () => !!ctx && ctx.currentTime < playEnd - 0.03;
+  const send = (o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
 
-  function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+  // ----- the greeting follows the voices -------------------------------------------------------------------
+  function animate() {
+    const talking = myraSpeaking() ? "myra" : youLevel > 0.12 ? "you" : "";
+    helloEl.className = "hello" + (talking ? " " + talking : "");
+    if (!reduceMotion) {
+      const level = talking === "myra" ? myraLevel : talking === "you" ? youLevel : 0;
+      const target = 100 + Math.min(1, level) * 25;
+      stretch += (target - stretch) * 0.25;
+      helloEl.style.setProperty("--stretch", stretch.toFixed(1));
+    }
+    youLevel *= 0.86; myraLevel *= 0.9;
+    raf = requestAnimationFrame(animate);
+  }
 
-  // ----- microphone -> 8 kHz mu-law frames ---------------------------------------------------------------
+  // ----- microphone -> 8 kHz mu-law frames -----------------------------------------------------------------
   function onMicChunk(chunk) {
     const ratio = ctx.sampleRate / SR_OUT;
-    for (; resamplePos < chunk.length; resamplePos += ratio) {       // box-filter decimation
-      const a = Math.floor(resamplePos), b = Math.min(chunk.length, Math.floor(resamplePos + ratio));
+    for (; pos < chunk.length; pos += ratio) {                    // box-filter decimation
+      const a = Math.floor(pos), b = Math.min(chunk.length, Math.floor(pos + ratio));
       let sum = 0; for (let i = a; i < b; i++) sum += chunk[i];
       pending.push(b > a ? sum / (b - a) : chunk[a]);
     }
-    resamplePos -= chunk.length;
+    pos -= chunk.length;
     while (pending.length >= FRAME) {
       const frame = pending.splice(0, FRAME);
       let rms = 0; for (const v of frame) rms += v * v; rms = Math.sqrt(rms / FRAME);
-      youBar.style.width = Math.min(100, rms * 400) + "%";
       // echo gate: without headphones, Myra's own voice from the speakers must not interrupt her
       const gate = !$("headphones").checked && myraSpeaking() && rms < 0.06;
+      if (!gate) youLevel = Math.max(youLevel, Math.min(1, rms * 6));
+      trackSpeech(gate ? 0 : rms);
       const out = new Uint8Array(FRAME);
-      for (let i = 0; i < FRAME; i++) {
-        out[i] = gate ? 0xff : encodeMulaw(Math.max(-32768, Math.min(32767, Math.round(frame[i] * 32767))));
-      }
+      for (let i = 0; i < FRAME; i++) out[i] = gate ? 0xff : encodeMulaw(Math.max(-32768, Math.min(32767, Math.round(frame[i] * 32767))));
       send({ event: "media", streamSid, media: { payload: bytesToB64(out) } });
     }
   }
 
-  // ----- Myra's audio -> speakers ------------------------------------------------------------------------
+  // a turn ends when you've spoken for 300 ms and then gone quiet for 250 ms; the reply time runs from your
+  // last loud frame to the moment Myra's first audio plays
+  function trackSpeech(rms) {
+    const now = performance.now();
+    if (rms > SPEECH) { lastLoud = now; loudMs += 20; return; }
+    if (loudMs >= 300 && now - lastLoud > END_SILENCE_MS && !awaiting) { awaiting = lastLoud; loudMs = 0; }
+  }
+
+  // ----- Myra's audio -> speakers --------------------------------------------------------------------------
   function play(payload) {
     const bytes = b64ToBytes(payload);
-    const buf = ctx.createBuffer(1, bytes.length, SR_OUT);
-    const ch = buf.getChannelData(0);
+    const buf = ctx.createBuffer(1, bytes.length, SR_OUT), ch = buf.getChannelData(0);
     let peak = 0;
     for (let i = 0; i < bytes.length; i++) { ch[i] = MULAW[bytes[i]]; peak = Math.max(peak, Math.abs(ch[i])); }
     const src = ctx.createBufferSource();
@@ -177,25 +257,43 @@
     const at = Math.max(ctx.currentTime + 0.03, playEnd);
     src.start(at); playEnd = at + buf.duration;
     sources.add(src); src.onended = () => sources.delete(src);
-    myraBar.style.width = Math.min(100, peak * 140) + "%";
+    myraLevel = Math.max(myraLevel, Math.min(1, peak * 1.6));
+    if (awaiting) {
+      const heardAt = performance.now() + (at - ctx.currentTime) * 1000;
+      logTurn(Math.max(0, Math.round(heardAt - awaiting)));
+      awaiting = 0; loudMs = 0;
+    }
   }
   function clearPlayback() {          // barge-in: the server sends Twilio's "clear"
     for (const s of sources) { try { s.stop(); } catch (_) {} }
-    sources.clear(); playEnd = ctx ? ctx.currentTime : 0; myraBar.style.width = "0%";
+    sources.clear(); playEnd = ctx ? ctx.currentTime : 0;
+  }
+  function logTurn(ms) {
+    if (turnNo === 0) turnsEl.innerHTML = "";
+    turnNo++;
+    const li = document.createElement("li");
+    li.innerHTML = `<span>Turn ${turnNo}</span><span>Myra replied <strong>${ms} ms</strong> after you stopped</span>`;
+    turnsEl.appendChild(li);
   }
 
-  // ----- call lifecycle -----------------------------------------------------------------------------------
+  // ----- call lifecycle ------------------------------------------------------------------------------------
+  function showState(text, timeLeft) {
+    stateEl.innerHTML = `<b>${text}</b>` + (timeLeft != null ? ` · ${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, "0")} left` : "");
+  }
   async function start() {
     const code = codeIn.value.trim();
     if (!code) { setMsg("Enter the access code from your invite link.", true); codeIn.focus(); return; }
-    btn.disabled = true; setMsg(""); setStatus("Checking…");
+    btn.disabled = true; setMsg(""); showState("Checking…");
     try {
-      const r = await fetch("/check?code=" + encodeURIComponent(code), { cache: "no-store" });
-      if (!r.ok) { throw new Error((await r.text()).trim() || "Can't start a call right now."); }
+      const r = await fetch(base + "/check?code=" + encodeURIComponent(code), { cache: "no-store" });
+      if (!r.ok) throw new Error((await r.text()).trim() || "Myra can't take calls right now.");
       stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 } });
     } catch (e) {
-      btn.disabled = false; setStatus("Ready");
-      setMsg(e.name === "NotAllowedError" ? "Microphone access is needed to talk to Myra." : (e.message || String(e)), true);
+      btn.disabled = false; showState("Ready");
+      const msg = e.name === "NotAllowedError" ? "Allow microphone access in your browser to talk to Myra."
+                : e instanceof TypeError ? "Myra's server isn't reachable right now. Try again in a minute."
+                : (e.message || String(e));
+      setMsg(msg, true);
       return;
     }
     ctx = new AudioContext();
@@ -207,15 +305,17 @@
     mic.connect(tap); tap.connect(mute); mute.connect(ctx.destination);   // keeps the worklet running, silently
     tap.port.onmessage = (e) => onMicChunk(e.data);
 
-    setStatus("Connecting…");
-    ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/browser?code=" + encodeURIComponent(code));
+    showState("Connecting…");
+    streamSid = "web-" + Date.now().toString(36);
+    ws = new WebSocket(wsBase + "/browser?code=" + encodeURIComponent(code));
     ws.onopen = () => {
       send({ event: "connected", protocol: "Call", version: "1.0.0" });
       send({ event: "start", start: { streamSid, customParameters: { PhoneNumber: caller } } });
       startedAt = Date.now(); ending = false;
-      btn.textContent = "End call"; btn.classList.add("hang"); btn.disabled = false;
-      setMsg("Connected. Say hello: Myra waits for you to speak first.");
+      btn.textContent = "Hang up"; btn.classList.add("hang"); btn.disabled = false;
+      setMsg("You're connected. Say hello; Myra waits for you to speak first.");
       timer = setInterval(tick, 500); tick();
+      if (!raf) raf = requestAnimationFrame(animate);
     };
     ws.onmessage = (e) => {
       let d; try { d = JSON.parse(e.data); } catch (_) { return; }
@@ -223,21 +323,20 @@
       else if (d.event === "clear") clearPlayback();
     };
     ws.onclose = (e) => {
-      const why = e.code === 4000 ? "Time's up for this demo call. Thanks for talking to Myra!"
-                : ending ? "Call ended." : "The call dropped. You can start a new one.";
+      const why = e.code === 4000 ? "That's the 3-minute limit for a demo call. Thanks for talking to Myra."
+                : ending ? "Call ended."
+                : "The call dropped. Check your connection and call again.";
       teardown(); setMsg(why, !ending && e.code !== 4000);
     };
-    ws.onerror = () => {};
   }
   function tick() {
-    const s = Math.floor((Date.now() - startedAt) / 1000), left = Math.max(0, limitSec - s);
-    setStatus(`${myraSpeaking() ? "Myra is speaking" : "Listening"} · ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")} left`);
-    if (!myraSpeaking()) myraBar.style.width = "0%";
+    const left = Math.max(0, LIMIT - Math.floor((Date.now() - startedAt) / 1000));
+    showState(myraSpeaking() ? "Myra is speaking" : "Listening", left);
   }
-  function stop() {
+  function hangUp() {
     ending = true;
     send({ event: "stop", streamSid });
-    try { ws && ws.close(1000, "caller hung up"); } catch (_) {}
+    try { ws.close(1000, "caller hung up"); } catch (_) {}
   }
   function teardown() {
     clearInterval(timer); timer = null;
@@ -245,12 +344,14 @@
     if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
     clearPlayback();
     if (ctx) { ctx.close(); ctx = null; }
-    ws = null; pending = []; resamplePos = 0;
-    btn.textContent = "Start call"; btn.classList.remove("hang"); btn.disabled = false;
-    setStatus("Ready"); youBar.style.width = "0%";
+    ws = null; pending = []; pos = 0; awaiting = 0; loudMs = 0;
+    cancelAnimationFrame(raf); raf = 0;
+    helloEl.className = "hello"; helloEl.style.setProperty("--stretch", "100"); stretch = 100;
+    btn.textContent = "Call Myra"; btn.classList.remove("hang"); btn.disabled = false;
+    showState("Ready");
   }
-  btn.addEventListener("click", () => (ws ? stop() : start()));
-  window.addEventListener("beforeunload", () => { if (ws) stop(); });
+  btn.addEventListener("click", () => (ws ? hangUp() : start()));
+  window.addEventListener("beforeunload", () => { if (ws) hangUp(); });
 })();
 </script>
 </body>
