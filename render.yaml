@@ -2,9 +2,9 @@ services:
   - type: web
     name: propvox-voice-agent
     runtime: docker
-    # starter = always on. "free" also works (WebSockets are supported) but sleeps after ~15 min idle,
-    # so the first visitor waits ~1 min for it to wake.
-    plan: starter
+    # free: WebSockets work, but the service sleeps after ~15 min idle and takes ~1 min to wake; the demo page
+    # starts waking it on page load. starter (~$7/month) is always on: change the plan here or in the dashboard.
+    plan: free
     autoDeploy: true
     dockerfilePath: ./Dockerfile
     healthCheckPath: /healthz
@@ -26,6 +26,9 @@ services:
       # Share the link as https://<service>.onrender.com/?code=<WEB_DEMO_CODE>
       - key: WEB_DEMO_CODE
         sync: false
+      # Only this page may check codes or start calls (the Vercel site).
+      - key: WEB_DEMO_ALLOWED_ORIGINS
+        value: https://propvox.vercel.app
       - key: WEB_DEMO_MAX_SECONDS
         value: "180"
       - key: WEB_DEMO_MAX_CONCURRENT

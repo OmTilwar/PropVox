@@ -94,17 +94,19 @@ Because a public page spends real API credit, browser calls are guarded (`backen
 Each browser keeps a random caller id, so Myra's cross-call memory works for a returning visitor.
 `/healthz` returns `ok` for health checks. Twilio keeps connecting to `/` exactly as before.
 
-### Hosted: page on Vercel, voice backend on Railway
+### Hosted: page on Vercel, voice backend on Render
 
-Vercel serves `web/` as a static site; the backend needs a long-lived WebSocket server, so it runs on Railway
-(`railway.json`: Dockerfile build, `/healthz` check).
+Vercel serves `web/` as a static site; the backend needs a long-lived WebSocket server, so it runs on Render
+(`render.yaml`: Docker, `/healthz` check, free plan by default).
 
-1. **Railway** → New project → Deploy from GitHub → this repo. Variables: `DEEPGRAM_API_KEY`, `SARVAM_API_KEY`,
-   `OPENROUTER_API_KEY`, `WEB_DEMO_CODE`, and `WEB_DEMO_ALLOWED_ORIGINS=https://<your-page>.vercel.app`
-   (only that page may check codes or start calls). Generate a public domain.
-2. Put that domain in `web/config.js`: `window.PROPVOX_BACKEND = "https://<service>.up.railway.app";`
+1. **Render** → New → Blueprint → this repo. Fill in `DEEPGRAM_API_KEY`, `SARVAM_API_KEY`, `OPENROUTER_API_KEY` and
+   `WEB_DEMO_CODE`; `WEB_DEMO_ALLOWED_ORIGINS` is set to the Vercel page (only it may check codes or start calls).
+2. Put the service URL in `web/config.js`: `window.PROPVOX_BACKEND = "https://<service>.onrender.com";`
 3. **Vercel** → the project's Git settings → this repo, Root Directory `web`, no build step.
 4. Share `https://<your-page>.vercel.app/?code=<WEB_DEMO_CODE>`.
+
+On the free plan the service sleeps when idle; the page pings `/healthz` as soon as it loads, so it is usually awake
+by the time a visitor clicks "Call Myra".
 
 ## Deploy (Render / Docker)
 

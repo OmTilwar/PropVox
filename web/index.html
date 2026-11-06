@@ -164,6 +164,20 @@
   // ----- backend address (config.js) and access code (?code=...) -------------------------------------------
   const base = (window.PROPVOX_BACKEND || location.origin).replace(/\/+$/, "");
   const wsBase = base.replace(/^http/, "ws");
+  // Render's free plan sleeps when idle and takes up to a minute to wake: start waking it as the page loads
+  let awake = !window.PROPVOX_BACKEND;
+  const warm = awake ? Promise.resolve() : (async () => {
+    showState("Waking Myra up…");
+    for (let i = 0; i < 30 && !awake; i++) {
+      try {
+        const r = await fetch(base + "/healthz", { cache: "no-store" });
+        if (r.ok) { awake = true; break; }
+      } catch (_) { /* still waking */ }
+      await new Promise((res) => setTimeout(res, 3000));
+    }
+    if (!ws) showState("Ready");
+  })();
+
   const params = new URLSearchParams(location.search);
   if (params.get("code")) { codeIn.value = params.get("code"); $("codeWrap").hidden = true; }
 
@@ -283,7 +297,13 @@
   async function start() {
     const code = codeIn.value.trim();
     if (!code) { setMsg("Enter the access code from your invite link.", true); codeIn.focus(); return; }
-    btn.disabled = true; setMsg(""); showState("Checking…");
+    btn.disabled = true; setMsg("");
+    if (!awake) {
+      showState("Waking Myra up…");
+      setMsg("Myra's server was asleep. The first call can take up to a minute to connect.");
+      await warm;
+    }
+    showState("Checking…");
     try {
       const r = await fetch(base + "/check?code=" + encodeURIComponent(code), { cache: "no-store" });
       if (!r.ok) throw new Error((await r.text()).trim() || "Myra can't take calls right now.");

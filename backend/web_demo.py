@@ -124,8 +124,8 @@ async def process_request(path: str, request_headers):
     """websockets' HTTP hook: serve the page / health check; gate browser calls; let Twilio through."""
     url = urlparse(path)
     if not _is_upgrade(request_headers):
-        if url.path == "/healthz":
-            return _text(HTTPStatus.OK, "ok\n")
+        if url.path == "/healthz":     # also the page's wake-up ping (Render's free plan sleeps when idle)
+            return _text(HTTPStatus.OK, "ok\n", _cors(request_headers))
         if url.path == "/check":       # lets the page explain a refusal before it opens the call
             cors = _cors(request_headers)
             if not origin_ok(request_headers):
