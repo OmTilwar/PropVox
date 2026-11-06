@@ -47,9 +47,17 @@ class DemoGate:
     """Access code, concurrency and daily caps for browser calls."""
 
     def __init__(self):
-        self.active = 0
+        # Live browser connections. A call counts as active only while its socket is OPEN: the handler's
+        # cleanup (CRM summary = another LLM call, closing Deepgram/Sarvam) can take a while or hang after a
+        # dropped call, and must not keep the demo "busy" (seen live, 6 Nov).
+        self.sockets: set = set()
         self.day = None
         self.count = 0
+
+    @property
+    def active(self) -> int:
+        self.sockets = {s for s in self.sockets if getattr(s, "open", False)}
+        return len(self.sockets)
 
     @property
     def code(self) -> str:
@@ -77,13 +85,13 @@ class DemoGate:
             return HTTPStatus.TOO_MANY_REQUESTS, "Today's demo calls are used up. Try again tomorrow.\n"
         return None
 
-    def opened(self) -> None:
+    def opened(self, websocket) -> None:
         self._roll_day()
-        self.active += 1
+        self.sockets.add(websocket)
         self.count += 1
 
-    def closed(self) -> None:
-        self.active = max(0, self.active - 1)
+    def closed(self, websocket) -> None:
+        self.sockets.discard(websocket)
 
 
 GATE = DemoGate()
@@ -157,18 +165,25 @@ def router(call_handler):
     async def handle(websocket, path):
         if not is_browser(path):
             return await call_handler(websocket, path)
-        GATE.opened()
+        GATE.opened(websocket)
         limit = _int("WEB_DEMO_MAX_SECONDS", 180)
         loop = asyncio.get_running_loop()
+        started = loop.time()
         # closing the socket ends the handler's receive loop normally, so its cleanup (CRM summary) still runs
         timer = loop.call_later(limit, lambda: asyncio.ensure_future(websocket.close(4000, "Demo time limit reached")))
         print(f"🌐 [Web demo] Browser call opened ({GATE.active} active, {GATE.count} today, limit {limit}s)")
         try:
             await call_handler(websocket, path)
+        except Exception as e:   # log it: a crash here is what a visitor sees as "the call dropped"
+            import traceback
+            print(f"❌ [Web demo] Call handler crashed: {e!r}")
+            traceback.print_exc()
+            raise
         finally:
             timer.cancel()
-            GATE.closed()
-            print(f"🌐 [Web demo] Browser call closed ({GATE.active} active)")
+            GATE.closed(websocket)
+            print(f"🌐 [Web demo] Browser call closed after {loop.time() - started:.0f}s "
+                  f"(close code {websocket.close_code}, reason {websocket.close_reason!r}; {GATE.active} active)")
     return handle
 
 

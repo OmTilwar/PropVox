@@ -563,8 +563,11 @@ async def main():
         print(f"🌐 Web demo on: open http://{host}:{port}/?code=<WEB_DEMO_CODE> "
               f"(max {web_demo._int('WEB_DEMO_MAX_SECONDS', 180)}s per call)")
     # One port: Twilio Media Streams as before, plus the browser demo page and /browser calls (web_demo.py)
+    # ping_timeout 60 s (default 20): a busy event loop on a small instance must not drop a live call for a
+    # late keep-alive reply
     server = await websockets.serve(web_demo.router(twilio_handler), host, port,
-                                    process_request=web_demo.process_request)
+                                    process_request=web_demo.process_request,
+                                    ping_interval=20, ping_timeout=60)
     await server.wait_closed()
 
 if __name__ == "__main__":

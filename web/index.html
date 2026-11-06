@@ -345,7 +345,7 @@
     ws.onclose = (e) => {
       const why = e.code === 4000 ? "That's the 3-minute limit for a demo call. Thanks for talking to Myra."
                 : ending ? "Call ended."
-                : "The call dropped. Check your connection and call again.";
+                : `The call dropped (code ${e.code}${e.reason ? ": " + e.reason : ""}). Call again in a moment.`;
       teardown(); setMsg(why, !ending && e.code !== 4000);
     };
   }
