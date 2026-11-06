@@ -66,6 +66,7 @@ from stt import DeepgramSTTLayer
 from llm import GroqLLMLayer
 from tts import SarvamTTSLayer
 from tzutil import IST
+import web_demo  # browser demo: page, /browser calls, access code and caps
 
 load_dotenv()
 
@@ -530,8 +531,9 @@ async def twilio_handler(websocket, path):
             except Exception as e:
                 print(f"⚠️ [CRM] Post-call summary failed (conversation log will still save): {e}")
 
-        # Always write JSON if we had an LLM session (even if CRM step failed or PhoneNumber was missing)
-        if llm:
+        # Always write JSON if we had an LLM session (even if CRM step failed or PhoneNumber was missing).
+        # Browser-demo visitors are not logged unless WEB_DEMO_SAVE_LOGS=1 (web_demo.py).
+        if llm and web_demo.save_logs_for(caller_phone):
             try:
                 save_call_log(
                     llm,
@@ -557,7 +559,12 @@ async def main():
             f"🌐 Twilio <Stream> url should be: {wss} "
             f"(set VOICE_AGENT_WSS_URL / TwiML to this; no path required)"
         )
-    server = await websockets.serve(twilio_handler, host, port)
+    if web_demo.GATE.enabled:
+        print(f"🌐 Web demo on: open http://{host}:{port}/?code=<WEB_DEMO_CODE> "
+              f"(max {web_demo._int('WEB_DEMO_MAX_SECONDS', 180)}s per call)")
+    # One port: Twilio Media Streams as before, plus the browser demo page and /browser calls (web_demo.py)
+    server = await websockets.serve(web_demo.router(twilio_handler), host, port,
+                                    process_request=web_demo.process_request)
     await server.wait_closed()
 
 if __name__ == "__main__":

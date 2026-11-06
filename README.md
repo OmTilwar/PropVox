@@ -70,6 +70,30 @@ PROPVOX_COMPANY, PROPVOX_PROJECT, PROPVOX_LOCATION, PROPVOX_SIZE, PROPVOX_PRICE
 
 Other knobs: `LLM_PROVIDER` (`openrouter` / `groq`), `OPENROUTER_PROVIDER_ORDER`, `MYRA_LLM_FALLBACK_MODELS`, `MYRA_LANGUAGE` (`auto` / `english` / `hinglish`), `MYRA_LLM_MODEL`, `DEEPGRAM_MODEL`, `DEEPGRAM_LANGUAGE`, `SARVAM_SPEAKER`, `TTS_SAMPLE_RATE`, `REDIS_URL`.
 
+## Browser demo
+
+Talk to Myra from a browser — no phone or Twilio account needed. `web/index.html` speaks Twilio's Media
+Streams protocol from the page (microphone → 8 kHz μ-law `media` events over a WebSocket, Myra's audio played
+back, `clear` on barge-in), so a browser call runs through exactly the same pipeline as a phone call.
+
+```bash
+cd backend
+WEB_DEMO_CODE=pick-a-code python main.py     # then open http://localhost:5050/?code=pick-a-code
+```
+
+Because a public page spends real API credit, browser calls are guarded (`backend/web_demo.py`):
+
+| Setting | Default | |
+|---|---|---|
+| `WEB_DEMO_CODE` | — | access code; the demo (and the page) is off when unset |
+| `WEB_DEMO_MAX_SECONDS` | 180 | each call is closed at this limit |
+| `WEB_DEMO_MAX_CONCURRENT` | 2 | calls at once |
+| `WEB_DEMO_MAX_PER_DAY` | 40 | calls per IST day |
+| `WEB_DEMO_SAVE_LOGS` | off | browser visitors' calls are not written to `conversation_logs/` |
+
+Each browser keeps a random caller id, so Myra's cross-call memory works for a returning visitor.
+`/healthz` returns `ok` for health checks. Twilio keeps connecting to `/` exactly as before.
+
 ## Deploy (Render / Docker)
 
 ```bash

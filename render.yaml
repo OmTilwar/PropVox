@@ -2,9 +2,12 @@ services:
   - type: web
     name: propvox-voice-agent
     runtime: docker
+    # starter = always on. "free" also works (WebSockets are supported) but sleeps after ~15 min idle,
+    # so the first visitor waits ~1 min for it to wake.
     plan: starter
     autoDeploy: true
     dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
     envVars:
       - key: PORT
         value: 5050
@@ -12,3 +15,20 @@ services:
         value: 0.0.0.0
       - key: PYTHONUNBUFFERED
         value: "1"
+      # Secrets: set these in the Render dashboard (sync: false keeps them out of this file).
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      # Browser demo (web/index.html at "/"): off unless an access code is set.
+      # Share the link as https://<service>.onrender.com/?code=<WEB_DEMO_CODE>
+      - key: WEB_DEMO_CODE
+        sync: false
+      - key: WEB_DEMO_MAX_SECONDS
+        value: "180"
+      - key: WEB_DEMO_MAX_CONCURRENT
+        value: "2"
+      - key: WEB_DEMO_MAX_PER_DAY
+        value: "40"
